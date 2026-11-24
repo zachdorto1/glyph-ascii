@@ -344,16 +344,43 @@
     clearMedia();
   }
 
+  const NBSP = "\u00A0";
+
+  /** Fixed-width plain text: every line is exactly `cols` chars. Space cells use
+   *  NBSP so paste targets that collapse regular spaces keep column width. */
   function asciiToPlainText(ascii) {
     const lines = [];
     for (let y = 0; y < ascii.rows; y++) {
       let line = "";
       for (let x = 0; x < ascii.cols; x++) {
-        line += ascii.cells[y * ascii.cols + x].ch;
+        const ch = ascii.cells[y * ascii.cols + x].ch;
+        line += ch === " " ? NBSP : ch;
       }
+      if (line.length < ascii.cols) line = line.padEnd(ascii.cols, NBSP);
+      else if (line.length > ascii.cols) line = [...line].slice(0, ascii.cols).join("");
       lines.push(line);
     }
     return lines.join("\n");
+  }
+
+  /** Monospace <pre> blob for rich paste (Docs, Slack, mail, etc.). */
+  function asciiToClipboardHtml(ascii) {
+    const lines = [];
+    for (let y = 0; y < ascii.rows; y++) {
+      let line = "";
+      for (let x = 0; x < ascii.cols; x++) {
+        const ch = ascii.cells[y * ascii.cols + x].ch;
+        line += ch === " " ? NBSP : ch;
+      }
+      if (line.length < ascii.cols) line = line.padEnd(ascii.cols, NBSP);
+      else if (line.length > ascii.cols) line = [...line].slice(0, ascii.cols).join("");
+      lines.push(escapeHtml(line));
+    }
+    const body = lines.join("\n");
+    return (
+      `<pre style="font-family:ui-monospace,Menlo,Consolas,monospace;` +
+      ` white-space:pre; line-height:1.15; margin:0">${body}</pre>`
+    );
   }
 
   function asciiToHtml(ascii) {
@@ -379,6 +406,29 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+
+  async function copyAsciiToClipboard(ascii) {
+    const plain = asciiToPlainText(ascii);
+    const html = asciiToClipboardHtml(ascii);
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard && navigator.clipboard.write) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": new Blob([plain], { type: "text/plain" }),
+            "text/html": new Blob([html], { type: "text/html" }),
+          }),
+        ]);
+        return "rich";
+      } catch {
+        // Fall through to plain-text write
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(plain);
+      return "plain";
+    }
+    throw new Error("clipboard unavailable");
   }
 
   function downloadBlob(blob, filename) {
@@ -447,8 +497,12 @@
   els.btnCopy.addEventListener("click", async () => {
     if (!state.lastAscii) return;
     try {
-      await navigator.clipboard.writeText(asciiToPlainText(state.lastAscii));
-      setStatus("Copied plain ASCII text to clipboard");
+      const mode = await copyAsciiToClipboard(state.lastAscii);
+      setStatus(
+        mode === "rich"
+          ? "Copied fixed-width ASCII — paste into monospace for best alignment"
+          : "Copied fixed-width ASCII text — use a monospace font when pasting"
+      );
     } catch {
       setStatus("Clipboard blocked — try Download HTML instead");
     }
