@@ -46,6 +46,7 @@
     fpsOut: document.getElementById("fps-out"),
     canvas: document.getElementById("ascii-canvas"),
     empty: document.getElementById("empty-state"),
+    stage: document.getElementById("preview-stage"),
   };
 
   const sampleCanvas = document.createElement("canvas");
@@ -150,6 +151,8 @@
     state.lastAscii = null;
     els.videoControls.hidden = true;
     els.canvas.classList.remove("visible");
+    els.canvas.style.width = "";
+    els.canvas.style.height = "";
     els.empty.classList.remove("hidden");
     els.mediaLabel.textContent = "No media";
     enableActions(false);
@@ -163,6 +166,26 @@
     const w = Math.ceil(metrics.width);
     const h = Math.ceil(fontPx * 1.15);
     return { w: Math.max(1, w), h: Math.max(1, h) };
+  }
+
+  function fitCanvasToStage() {
+    const canvas = els.canvas;
+    const stage = els.stage;
+    if (!canvas.classList.contains("visible") || !canvas.width || !canvas.height) {
+      return;
+    }
+    const style = getComputedStyle(stage);
+    const padX =
+      (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+    const padY =
+      (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+    const availW = Math.max(1, stage.clientWidth - padX);
+    const availH = Math.max(1, stage.clientHeight - padY);
+    const scale = Math.min(availW / canvas.width, availH / canvas.height);
+    const w = Math.max(1, Math.floor(canvas.width * scale));
+    const h = Math.max(1, Math.floor(canvas.height * scale));
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
   }
 
   function renderAsciiToCanvas(ascii) {
@@ -186,6 +209,7 @@
 
     els.canvas.classList.add("visible");
     els.empty.classList.add("hidden");
+    fitCanvasToStage();
   }
 
   function convertFrame(source, sourceW, sourceH) {
@@ -446,8 +470,8 @@
     setStatus("Downloaded colored HTML");
   });
 
-  // Keep aspect on resize for images
-  window.addEventListener("resize", () => {
-    // no-op: canvas scales via CSS max-width
-  });
+  window.addEventListener("resize", fitCanvasToStage);
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(fitCanvasToStage).observe(els.stage);
+  }
 })();
