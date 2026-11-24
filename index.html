@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Glyph — ASCII Art Converter</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1f24'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='16' fill='%2314a89e'%3E%E2%96%93%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">▓</span>
+        <h1 class="brand-name">Glyph</h1>
+      </div>
+      <p class="tagline">Photo &amp; video → colored ASCII</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel controls" aria-label="Controls">
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input
+            id="file-input"
+            type="file"
+            accept="image/*,video/*"
+            hidden
+          />
+          <span class="dropzone-icon" aria-hidden="true">⌘</span>
+          <span class="dropzone-title">Drop a photo or video</span>
+          <span class="dropzone-hint">or tap to browse · PNG, JPG, WebP, GIF, MP4, WebM</span>
+        </label>
+
+        <div class="control-grid">
+          <label class="field">
+            <span>Columns</span>
+            <input id="cols" type="range" min="40" max="160" value="100" />
+            <output id="cols-out" for="cols">100</output>
+          </label>
+
+          <label class="field">
+            <span>Character set</span>
+            <select id="charset">
+              <option value="standard">Standard density</option>
+              <option value="blocks">Block shades</option>
+              <option value="simple">Simple</option>
+              <option value="binary">Binary</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Color</span>
+            <select id="color-mode">
+              <option value="full">Full RGB</option>
+              <option value="ansi">ANSI 16</option>
+              <option value="mono-green">Mono green</option>
+              <option value="mono-amber">Mono amber</option>
+              <option value="grayscale">Grayscale</option>
+            </select>
+          </label>
+
+          <label class="field checkbox">
+            <input id="invert" type="checkbox" />
+            <span>Invert brightness</span>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="btn-copy" class="btn ghost" disabled>Copy text</button>
+          <button type="button" id="btn-png" class="btn ghost" disabled>Download PNG</button>
+          <button type="button" id="btn-html" class="btn ghost" disabled>Download HTML</button>
+        </div>
+
+        <p class="status" id="status" role="status">Waiting for a file…</p>
+      </section>
+
+      <section class="panel preview-panel" aria-label="Preview">
+        <div class="preview-toolbar">
+          <span id="media-label" class="media-label">No media</span>
+          <div class="video-controls" id="video-controls" hidden>
+            <button type="button" id="btn-play" class="btn small">Pause</button>
+            <label class="field inline">
+              <span>FPS</span>
+              <input id="fps" type="range" min="4" max="24" value="12" />
+              <output id="fps-out" for="fps">12</output>
+            </label>
+          </div>
+        </div>
+        <div class="preview-stage" id="preview-stage">
+          <canvas id="ascii-canvas" width="800" height="600" aria-label="ASCII art preview"></canvas>
+          <div class="empty-state" id="empty-state">
+            <p>Upload an image or video to see colored ASCII appear here.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Runs entirely in your browser. Nothing is uploaded to a server.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
