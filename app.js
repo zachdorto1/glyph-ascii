@@ -34,6 +34,8 @@
     colsOut: document.getElementById("cols-out"),
     charset: document.getElementById("charset"),
     colorMode: document.getElementById("color-mode"),
+    brightness: document.getElementById("brightness"),
+    brightnessOut: document.getElementById("brightness-out"),
     invert: document.getElementById("invert"),
     btnCopy: document.getElementById("btn-copy"),
     btnPng: document.getElementById("btn-png"),
@@ -202,8 +204,16 @@
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         const cell = cells[y * cols + x];
+        const px = x * cellW;
+        const py = y * cellH;
+        // Soft color underlay: glyphs leave gaps; without this the stage black
+        // averages the image darker than the source.
+        outCtx.globalAlpha = 0.22;
         outCtx.fillStyle = `rgb(${cell.r},${cell.g},${cell.b})`;
-        outCtx.fillText(cell.ch, x * cellW, y * cellH);
+        outCtx.fillRect(px, py, cellW, cellH);
+        outCtx.globalAlpha = 1;
+        outCtx.fillStyle = `rgb(${cell.r},${cell.g},${cell.b})`;
+        outCtx.fillText(cell.ch, px, py);
       }
     }
 
@@ -229,6 +239,9 @@
     const charset = els.charset.value;
     const colorMode = els.colorMode.value;
     const invert = els.invert.checked;
+    // Glyphs don't fill the cell; dark stage shows through and mutes the image.
+    // Brightness scales mapped RGB so the preview can match the source.
+    const brightness = Number(els.brightness.value) / 100;
     const cells = new Array(cols * rows);
 
     for (let i = 0; i < cols * rows; i++) {
@@ -241,12 +254,12 @@
       const g = Math.round(g0 * a);
       const b = Math.round(b0 * a);
       const bright = luminance(r, g, b) / 255;
-      const [cr, cg, cb] = mapColor(r, g, b, colorMode);
+      const [mr, mg, mb] = mapColor(r, g, b, colorMode);
       cells[i] = {
         ch: charForBrightness(bright, charset, invert),
-        r: cr,
-        g: cg,
-        b: cb,
+        r: Math.min(255, Math.round(mr * brightness)),
+        g: Math.min(255, Math.round(mg * brightness)),
+        b: Math.min(255, Math.round(mb * brightness)),
       };
     }
 
@@ -464,6 +477,12 @@
 
   els.cols.addEventListener("input", () => {
     els.colsOut.textContent = els.cols.value;
+    if (state.kind === "image") convertImage();
+    else if (state.kind === "video" && !state.playing) convertVideoFrame();
+  });
+
+  els.brightness.addEventListener("input", () => {
+    els.brightnessOut.textContent = `${els.brightness.value}%`;
     if (state.kind === "image") convertImage();
     else if (state.kind === "video" && !state.playing) convertVideoFrame();
   });
