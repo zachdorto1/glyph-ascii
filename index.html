@@ -68,6 +68,19 @@
             </select>
           </label>
 
+          <label class="field">
+            <span>Brightness</span>
+            <input
+              id="brightness"
+              type="range"
+              min="50"
+              max="200"
+              value="120"
+              title="Boosts colors so ASCII doesn’t look darker than the source (glyphs leave dark gaps)"
+            />
+            <output id="brightness-out" for="brightness">120%</output>
+          </label>
+
           <label class="field checkbox">
             <input id="invert" type="checkbox" />
             <span>Invert brightness</span>
